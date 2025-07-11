@@ -1,45 +1,33 @@
 import streamlit as st
 from PIL import Image
 import random
-import base64
-from io import BytesIO
 import os
 
-# --- Settings ---
-TILE_FOLDER = "tiles"
-TILE_FILENAMES = [f"t{i}.png" for i in range(1, 10)]
-ROTATIONS = [0, 90, 180, 270]
+st.set_page_config(layout="wide")
+st.title("🧩 3×3 Tile Shuffler")
 
-# --- Shuffle on first load or button press ---
-if "layout" not in st.session_state or st.button("🔄 Reshuffle Layout"):
-    st.session_state.layout = random.sample(TILE_FILENAMES, 9)
-    st.session_state.rotations = [random.choice(ROTATIONS) for _ in range(9)]
+# --- Configuration ---
+tile_folder = "tiles"  # folder containing t1.png through t9.png
+tile_filenames = [f"t{i}.png" for i in range(1, 10)]
 
-# --- Helper to convert image to base64 ---
-def image_to_base64(img):
-    buffered = BytesIO()
-    img.save(buffered, format="PNG")
-    return base64.b64encode(buffered.getvalue()).decode()
+# --- Reshuffle logic ---
+def generate_new_layout():
+    tiles = tile_filenames.copy()
+    random.shuffle(tiles)
+    layout = [(tile, random.choice([0, 90, 180, 270])) for tile in tiles]
+    return layout
 
-# --- Build the HTML table ---
-html = "<table cellspacing='0' cellpadding='0' style='border-collapse: collapse;'>"
+# --- UI: Button ---
+if "layout" not in st.session_state:
+    st.session_state.layout = generate_new_layout()
 
-for row in range(3):
-    html += "<tr>"
-    for col in range(3):
-        index = row * 3 + col
-        filename = st.session_state.layout[index]
-        rotation = st.session_state.rotations[index]
+if st.button("🔄 Reshuffle Layout"):
+    st.session_state.layout = generate_new_layout()
 
-        img_path = os.path.join(TILE_FOLDER, filename)
-        img = Image.open(img_path).rotate(rotation, expand=True)
-        img = img.resize((128, 128))  # size in pixels
-
-        img_b64 = image_to_base64(img)
-        html += f"<td><img src='data:image/png;base64,{img_b64}' width='128' height='128'></td>"
-    html += "</tr>"
-
-html += "</table>"
-
-# --- Display the result ---
-st.markdown(html, unsafe_allow_html=True)
+# --- Display tiles in 3x3 grid ---
+cols = st.columns(3, gap="small")
+for idx, (filename, angle) in enumerate(st.session_state.layout):
+    col = cols[idx % 3]
+    path = os.path.join(tile_folder, filename)
+    img = Image.open(path).rotate(angle, expand=True)
+    col.image(img, use_container_width=True)
