@@ -1,44 +1,44 @@
 import streamlit as st
-from PIL import Image
 import random
-import os
+from PIL import Image
+import base64
+from io import BytesIO
 
-st.set_page_config(layout="centered")
-st.title("🎲 Random 3×3 Tile Grid")
+# Load and rotate images randomly
+tiles = list(range(1, 10))
+random.shuffle(tiles)
+tile_images = []
+for i in tiles:
+    img = Image.open(f"tiles/t{i}.png")
+    img = img.rotate(90 * random.randint(0, 3), expand=True)
+    buffered = BytesIO()
+    img.save(buffered, format="PNG")
+    encoded = base64.b64encode(buffered.getvalue()).decode()
+    tile_images.append(f'<img src="data:image/png;base64,{encoded}" width="100" style="margin:0;padding:0;border:0;">')
 
-# --- Setup ---
-TILE_DIR = "tiles"  # Folder where your tile PNGs are stored
-tile_filenames = [f"t{i}.png" for i in range(1, 10)]  # t1.png to t9.png
+# Create 3x3 HTML table with no gaps
+html_grid = """
+<style>
+table {
+    border-spacing: 0;
+    border-collapse: collapse;
+}
+td {
+    padding: 0;
+}
+</style>
+<table>
+"""
+for i in range(3):
+    html_grid += "<tr>"
+    for j in range(3):
+        html_grid += f"<td>{tile_images[i * 3 + j]}</td>"
+    html_grid += "</tr>"
+html_grid += "</table>"
 
-# Load images
-tiles = []
-for fname in tile_filenames:
-    try:
-        img = Image.open(os.path.join(TILE_DIR, fname))
-        tiles.append(img)
-    except FileNotFoundError:
-        st.error(f"Missing file: {fname}")
-        st.stop()
+# Render
+st.markdown(html_grid, unsafe_allow_html=True)
 
-# --- Shuffle button ---
-if st.button("🔄 Reshuffle Tiles"):
-    st.session_state.shuffled = True
-
-if "shuffled" not in st.session_state:
-    st.session_state.shuffled = True
-
-if st.session_state.shuffled:
-    # Randomize tile order and rotations
-    tile_indices = list(range(9))
-    random.shuffle(tile_indices)
-    rotations = [random.choice([0, 90, 180, 270]) for _ in range(9)]
-
-    # Display 3×3 grid
-    for row in range(3):
-        cols = st.columns(3)
-        for col in range(3):
-            idx = row * 3 + col
-            tile = tiles[tile_indices[idx]].rotate(rotations[idx])
-            cols[col].image(tile, use_container_width=True)
-
-    st.session_state.shuffled = False
+# Button to reshuffle
+if st.button("🔄 Reshuffle Layout"):
+    st.experimental_rerun()
