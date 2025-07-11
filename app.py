@@ -1,44 +1,45 @@
 import streamlit as st
-import random
 from PIL import Image
+import random
 import base64
 from io import BytesIO
+import os
 
-# Load and rotate images randomly
-tiles = list(range(1, 10))
-random.shuffle(tiles)
-tile_images = []
-for i in tiles:
-    img = Image.open(f"tiles/t{i}.png")
-    img = img.rotate(90 * random.randint(0, 3), expand=True)
+# --- Settings ---
+TILE_FOLDER = "tiles"
+TILE_FILENAMES = [f"t{i}.png" for i in range(1, 10)]
+ROTATIONS = [0, 90, 180, 270]
+
+# --- Shuffle on first load or button press ---
+if "layout" not in st.session_state or st.button("🔄 Reshuffle Layout"):
+    st.session_state.layout = random.sample(TILE_FILENAMES, 9)
+    st.session_state.rotations = [random.choice(ROTATIONS) for _ in range(9)]
+
+# --- Helper to convert image to base64 ---
+def image_to_base64(img):
     buffered = BytesIO()
     img.save(buffered, format="PNG")
-    encoded = base64.b64encode(buffered.getvalue()).decode()
-    tile_images.append(f'<img src="data:image/png;base64,{encoded}" width="100" style="margin:0;padding:0;border:0;">')
+    return base64.b64encode(buffered.getvalue()).decode()
 
-# Create 3x3 HTML table with no gaps
-html_grid = """
-<style>
-table {
-    border-spacing: 0;
-    border-collapse: collapse;
-}
-td {
-    padding: 0;
-}
-</style>
-<table>
-"""
-for i in range(3):
-    html_grid += "<tr>"
-    for j in range(3):
-        html_grid += f"<td>{tile_images[i * 3 + j]}</td>"
-    html_grid += "</tr>"
-html_grid += "</table>"
+# --- Build the HTML table ---
+html = "<table cellspacing='0' cellpadding='0' style='border-collapse: collapse;'>"
 
-# Render
-st.markdown(html_grid, unsafe_allow_html=True)
+for row in range(3):
+    html += "<tr>"
+    for col in range(3):
+        index = row * 3 + col
+        filename = st.session_state.layout[index]
+        rotation = st.session_state.rotations[index]
 
-# Button to reshuffle
-if st.button("🔄 Reshuffle Layout"):
-    st.experimental_rerun()
+        img_path = os.path.join(TILE_FOLDER, filename)
+        img = Image.open(img_path).rotate(rotation, expand=True)
+        img = img.resize((128, 128))  # size in pixels
+
+        img_b64 = image_to_base64(img)
+        html += f"<td><img src='data:image/png;base64,{img_b64}' width='128' height='128'></td>"
+    html += "</tr>"
+
+html += "</table>"
+
+# --- Display the result ---
+st.markdown(html, unsafe_allow_html=True)
