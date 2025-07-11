@@ -7,17 +7,22 @@ st.set_page_config(layout="wide")
 st.title("🧩 3×3 Tile Shuffler")
 
 # --- Configuration ---
-tile_folder = "tiles"  # folder containing t1.png through t9.png
+tile_folder = "tiles"  # This folder must exist and contain t1.png to t9.png
 tile_filenames = [f"t{i}.png" for i in range(1, 10)]
 
-# --- Reshuffle logic ---
+# --- Utility: Load and shuffle layout ---
 def generate_new_layout():
     tiles = tile_filenames.copy()
     random.shuffle(tiles)
-    layout = [(tile, random.choice([0, 90, 180, 270])) for tile in tiles]
-    return layout
+    return [(tile, random.choice([0, 90, 180, 270])) for tile in tiles]
 
-# --- UI: Button ---
+# --- Safety: Ensure files exist ---
+missing_files = [f for f in tile_filenames if not os.path.exists(os.path.join(tile_folder, f))]
+if missing_files:
+    st.error(f"Missing image files: {', '.join(missing_files)} in folder '{tile_folder}'")
+    st.stop()
+
+# --- Initialize or reshuffle ---
 if "layout" not in st.session_state:
     st.session_state.layout = generate_new_layout()
 
@@ -27,7 +32,6 @@ if st.button("🔄 Reshuffle Layout"):
 # --- Display tiles in 3x3 grid ---
 cols = st.columns(3, gap="small")
 for idx, (filename, angle) in enumerate(st.session_state.layout):
-    col = cols[idx % 3]
     path = os.path.join(tile_folder, filename)
     img = Image.open(path).rotate(angle, expand=True)
-    col.image(img, use_container_width=True)
+    cols[idx % 3].image(img, use_container_width=True)
