@@ -39,6 +39,6 @@ if st.session_state.shuffled:
         for col in range(3):
             idx = row * 3 + col
             tile = tiles[tile_indices[idx]].rotate(rotations[idx])
-            cols[col].image(tile, use_column_width=True)
+            cols[col].image(tile, use_container_width=True)
 
     st.session_state.shuffled = False
