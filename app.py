@@ -1,37 +1,45 @@
 import streamlit as st
-from PIL import Image
 import random
-import os
+from PIL import Image
+import base64
+from io import BytesIO
 
-st.set_page_config(layout="wide")
-st.title("🧩 3×3 Tile Shuffler")
+# --- Load and rotate images ---
+tile_files = [f"tiles/t{i+1}.png" for i in range(9)]
+layout = random.sample(tile_files, len(tile_files))
+rotations = [random.choice([0, 90, 180, 270]) for _ in range(9)]
 
-# --- Configuration ---
-tile_folder = "tiles"  # This folder must exist and contain t1.png to t9.png
-tile_filenames = [f"t{i}.png" for i in range(1, 10)]
+# --- Convert images to base64 after rotating ---
+def image_to_base64(img):
+    buffered = BytesIO()
+    img.save(buffered, format="PNG")
+    return base64.b64encode(buffered.getvalue()).decode()
 
-# --- Utility: Load and shuffle layout ---
-def generate_new_layout():
-    tiles = tile_filenames.copy()
-    random.shuffle(tiles)
-    return [(tile, random.choice([0, 90, 180, 270])) for tile in tiles]
-
-# --- Safety: Ensure files exist ---
-missing_files = [f for f in tile_filenames if not os.path.exists(os.path.join(tile_folder, f))]
-if missing_files:
-    st.error(f"Missing image files: {', '.join(missing_files)} in folder '{tile_folder}'")
-    st.stop()
-
-# --- Initialize or reshuffle ---
-if "layout" not in st.session_state:
-    st.session_state.layout = generate_new_layout()
-
-if st.button("🔄 Reshuffle Layout"):
-    st.session_state.layout = generate_new_layout()
-
-# --- Display tiles in 3x3 grid ---
-cols = st.columns(3, gap="small")
-for idx, (filename, angle) in enumerate(st.session_state.layout):
-    path = os.path.join(tile_folder, filename)
+img_html_blocks = []
+for path, angle in zip(layout, rotations):
     img = Image.open(path).rotate(angle, expand=True)
-    cols[idx % 3].image(img, width=160)  # Fixed width for each tile
+    img = img.resize((160, 160))  # Ensure all tiles are same size
+    img_b64 = image_to_base64(img)
+    html_img = f'<img src="data:image/png;base64,{img_b64}" style="width:160px;height:160px;margin:0;padding:0;display:block;" />'
+    img_html_blocks.append(html_img)
+
+# --- Arrange images in a 3x3 CSS Grid ---
+grid_html = f"""
+<div style="
+    display: grid;
+    grid-template-columns: repeat(3, 160px);
+    grid-template-rows: repeat(3, 160px);
+    gap: 0;
+    padding: 0;
+    margin: 0;
+">
+    {''.join(f'<div>{img}</div>' for img in img_html_blocks)}
+</div>
+"""
+
+st.markdown("## 🎲 Tile Layout (No Gaps)")
+st.markdown(grid_html, unsafe_allow_html=True)
+
+# --- Shuffle button ---
+if st.button("🔁 Shuffle Layout"):
+    st.experimental_rerun()
