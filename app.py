@@ -4,8 +4,11 @@ from PIL import Image
 import base64
 from io import BytesIO
 
-TILE_SIZE = 160
 tile_files = [f"tiles/t{i+1}.png" for i in range(9)]
+
+# --- UI: TILE SIZE SLIDER (must come early!) ---
+st.markdown("## 🎲 Random Setup for 36 by Néstor Romeral Andrés")
+TILE_SIZE = st.slider("Tile Size (px)", min_value=80, max_value=240, value=160, step=10)
 
 # --- Initialize layout and rotations once ---
 if "layout" not in st.session_state:
@@ -45,5 +48,5 @@ grid_html = f"""
 </div>
 """
 
-st.markdown("## 🎲 Random Setup for 36 by Néstor Romeral Andrés")
 st.markdown(grid_html, unsafe_allow_html=True)
+
