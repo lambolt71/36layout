@@ -50,3 +50,24 @@ grid_html = f"""
 
 st.markdown(grid_html, unsafe_allow_html=True)
 
+# --- Create combined image ---
+final_img = Image.new("RGBA", (3 * TILE_SIZE, 3 * TILE_SIZE), (255, 255, 255, 0))
+
+for idx, (path, angle) in enumerate(zip(st.session_state.layout, st.session_state.rotations)):
+    img = Image.open(path).rotate(angle, expand=True).resize((TILE_SIZE, TILE_SIZE))
+    row, col = divmod(idx, 3)
+    final_img.paste(img, (col * TILE_SIZE, row * TILE_SIZE))
+
+# --- Convert to BytesIO for download ---
+buffered = BytesIO()
+final_img.save(buffered, format="PNG")
+img_bytes = buffered.getvalue()
+
+# --- Download button ---
+st.download_button(
+    label="💾 Download Board as PNG",
+    data=img_bytes,
+    file_name="36-layout.png",
+    mime="image/png"
+)
+
