@@ -37,7 +37,7 @@ grid_html = f"""
 </div>
 """
 
-st.markdown("## 🎲 Tile Layout (No Gaps)")
+st.markdown("Random Setup for 36 by Néstor Romeral Andrés)")
 st.markdown(grid_html, unsafe_allow_html=True)
 
 # --- Shuffle button ---
