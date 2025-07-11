@@ -34,4 +34,4 @@ cols = st.columns(3, gap="small")
 for idx, (filename, angle) in enumerate(st.session_state.layout):
     path = os.path.join(tile_folder, filename)
     img = Image.open(path).rotate(angle, expand=True)
-    cols[idx % 3].image(img, use_container_width=True)
+    cols[idx % 3].image(img, width=160)  # Fixed width for each tile
